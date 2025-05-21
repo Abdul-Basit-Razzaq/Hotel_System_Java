@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/et_search_hotel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Search Hotels"
+        android:inputType="text"/>
+
+    <EditText
+        android:id="@+id/et_min_price"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/et_search_hotel"
+        android:layout_marginTop="16dp"
+        android:hint="Min Price"
+        android:inputType="number"/>
+
+    <EditText
+        android:id="@+id/et_max_price"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/et_min_price"
+        android:layout_marginTop="8dp"
+        android:hint="Max Price"
+        android:inputType="number"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view_hotels"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/et_max_price"
+        android:layout_marginTop="16dp"/>
+
+</RelativeLayout>

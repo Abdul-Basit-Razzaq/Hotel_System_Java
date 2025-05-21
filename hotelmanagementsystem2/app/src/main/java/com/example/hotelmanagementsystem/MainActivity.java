@@ -1,0 +1,169 @@
+package com.example.hotelmanagementsystem;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Patterns;
+import android.view.View;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatButton;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.android.material.textfield.TextInputEditText;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class MainActivity extends AppCompatActivity {
+    FragmentManager manager;
+    private FirebaseAuth mAuth;
+    Fragment loginFrag, signupFrag;
+    View LoginFragView, SignupFragView;
+    TextView tvLogin, tvSignup;
+    TextInputEditText etEmailS, etPassS, etRePassS, etEmailL, etPassL;
+    AppCompatButton btnSignup, btnLogin, btnCancelS, btnCancelL;
+    private ProgressBar progressBar;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        // Initialize Firebase Auth
+        mAuth = FirebaseAuth.getInstance();
+        manager = getSupportFragmentManager();
+        loginFrag = manager.findFragmentById(R.id.fragLogin);
+        signupFrag = manager.findFragmentById(R.id.fragSignUp);
+        LoginFragView = loginFrag.getView();
+        SignupFragView = signupFrag.getView();
+
+        tvSignup = LoginFragView.findViewById(R.id.tvSignUp);
+        etEmailL = LoginFragView.findViewById(R.id.etEmail);
+        etPassL = LoginFragView.findViewById(R.id.etPassword);
+        btnCancelL = LoginFragView.findViewById(R.id.btnCancel);
+        btnLogin = LoginFragView.findViewById(R.id.btnLogin);
+
+        tvLogin = SignupFragView.findViewById(R.id.tvLogin);
+        etEmailS = SignupFragView.findViewById(R.id.etEmail);
+        etPassS = SignupFragView.findViewById(R.id.etPassword);
+        etRePassS = SignupFragView.findViewById(R.id.etRePassword);
+        btnCancelS = SignupFragView.findViewById(R.id.btnCancel);
+        btnSignup = SignupFragView.findViewById(R.id.btnSignup);
+
+        // Progress bar initialization
+        progressBar = findViewById(R.id.progressBar);
+
+        // Initially show login fragment and hide signup fragment
+        manager.beginTransaction().show(loginFrag).hide(signupFrag).commit();
+
+        tvSignup.setOnClickListener(v -> manager.beginTransaction().hide(loginFrag).show(signupFrag).commit());
+
+        tvLogin.setOnClickListener(v -> manager.beginTransaction().hide(signupFrag).show(loginFrag).commit());
+
+        btnSignup.setOnClickListener(v -> {
+            String email = etEmailS.getText().toString().trim();
+            String password = etPassS.getText().toString();
+            String cPassword = etRePassS.getText().toString();
+
+            if (!isValidEmail(email)) {
+                Toast.makeText(MainActivity.this, "Invalid email format", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (!isValidPassword(password)) {
+                Toast.makeText(MainActivity.this, "Password must be 8 characters long and contain at least one number and one special character", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (!password.equals(cPassword)) {
+                Toast.makeText(MainActivity.this, "Passwords do not match", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Show progress bar
+            progressBar.setVisibility(View.VISIBLE);
+
+            // Sign up the user with Firebase Auth
+            mAuth.createUserWithEmailAndPassword(email, password)
+                    .addOnCompleteListener(MainActivity.this, task -> {
+                        // Hide progress bar
+                        progressBar.setVisibility(View.GONE);
+                        if (task.isSuccessful()) {
+                            // Sign in success, update UI with the signed-in user's information
+                            FirebaseUser user = mAuth.getCurrentUser();
+                            updateUI(user);
+                            manager.beginTransaction().show(loginFrag).hide(signupFrag).commit();
+                        } else {
+                            // If sign in fails, display a message to the user.
+                            Toast.makeText(MainActivity.this, "Authentication failed: " + task.getException().getMessage(),
+                                    Toast.LENGTH_SHORT).show();
+                            updateUI(null);
+                        }
+                    });
+        });
+
+        btnLogin.setOnClickListener(v -> {
+            String email = etEmailL.getText().toString().trim();
+            String password = etPassL.getText().toString().trim();
+
+            if (!isValidEmail(email)) {
+                Toast.makeText(MainActivity.this, "Invalid email format", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Show progress bar
+            progressBar.setVisibility(View.VISIBLE);
+
+            mAuth.signInWithEmailAndPassword(email, password)
+                    .addOnCompleteListener(MainActivity.this, task -> {
+                        // Hide progress bar
+                        progressBar.setVisibility(View.GONE);
+                        if (task.isSuccessful()) {
+                            // Sign in success, update UI with the signed-in user's information
+                            FirebaseUser user = mAuth.getCurrentUser();
+                            updateUI(user);
+                            startActivity(new Intent(MainActivity.this, Home.class));
+                            finish();
+                        } else {
+                            // If sign in fails, display a message to the user.
+                            Toast.makeText(MainActivity.this, "Authentication failed: " + task.getException().getMessage(),
+                                    Toast.LENGTH_SHORT).show();
+                            updateUI(null);
+                        }
+                    });
+        });
+    }
+
+    // Validate email format
+    private boolean isValidEmail(CharSequence target) {
+        return (!target.toString().isEmpty() && Patterns.EMAIL_ADDRESS.matcher(target).matches());
+    }
+
+    // Validate password format (8 characters, at least one number, one special character)
+    private boolean isValidPassword(String password) {
+        String passwordPattern = "^(?=.*[0-9])(?=.*[!@#$%^&*+=])(?=\\S+$).{8,}$";
+        Pattern pattern = Pattern.compile(passwordPattern);
+        Matcher matcher = pattern.matcher(password);
+        return matcher.matches();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        // Check if user is signed in (non-null) and update UI accordingly.
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if (currentUser != null) {
+            updateUI(currentUser);
+        }
+    }
+
+    private void updateUI(FirebaseUser user) {
+        // Navigate to home screen or update the UI with user info
+    }
+}
